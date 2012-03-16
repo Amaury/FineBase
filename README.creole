@@ -7,8 +7,7 @@ FineBase is a basic PHP library.
 * Discussions: http://groups.google.com/group/finemedia-oss
 
 ==License==
-FineBase is placed under the terms of the MIT license
-(http://www.opensource.org/licenses/mit-license.php).
+FineBase is placed under the terms of the [[http://www.opensource.org/licenses/mit-license.php|MIT license]].
 
 Copyright © 2007-2011, Amaury Bouchard, Fine Media
 Permission is hereby granted, free of charge, to any person obtaining a
