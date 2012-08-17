@@ -1,7 +1,7 @@
 <?php
 
-require_once("finebase/FineDatabase.php");
-require_once("finebase/ApplicationException.php");
+require_once('finebase/FineDatabase.php');
+require_once('finebase/ApplicationException.php');
 
 /**
  * Objet de gestion d'une file de messages.
@@ -52,7 +52,7 @@ class FineQueue {
 	 * @throws	ApplicationException	Si le nom est invalide.
 	 */
 	public function setQueueName($queueName) {
-		if (empty($queueName) || strlen($queueName) > 100)
+		if (empty($queueName) || mb_strlen($queueName) > 25)
 			throw new ApplicationException("Bad queue name.", ApplicationException::API);
 		// création de la file de messages
 		$sql = "INSERT INTO queue.tQueue
@@ -78,7 +78,7 @@ class FineQueue {
 		if (!$this->_queueId)
 			throw new ApplicationException("Current message queue not set.", ApplicationException::API);
 		$content = json_encode($content);
-		if (mb_strlen($content, 'ASCII') > 255)
+		if (mb_strlen($content, 'ASCII') > 65535)
 			throw new ApplicationException("Content size exceed the limit.", ApplicationException::API);
 		$sql = "INSERT INTO queue.tMessage
 			SET mes_d_creation = NOW(),
