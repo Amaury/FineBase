@@ -1,33 +1,15 @@
 <?php
 
-require_once("finebase/FineLog.php");
-require_once("finebase/ApplicationException.php");
-require_once("finebase/DatabaseException.php");
+require_once('finebase/FineDatasource.php');
 
 /**
  * Objet de gestion de la connexion à la base de données.
  *
- * Cet objet peut s'utiliser de 2 manières :
- * - En instanciant un objet via la méthode factory(), qui retourne une instance autonome.
- * - En utilisant la méthode singleton() qui retourne une instance unique.
- * L'utilisation du singleton permet d'avoir un seul objet de gestion de la base de données
- * dans l'application. Dans ce cas, il faut penser à fournir le DSN (Data Source Name,
- * paramètre de connexion à la base de données) lors du premier appel à la méthode singleton().
+ * Cet objet s'instancie via la méthode factory(), qui retourne une instance autonome.
  *
- * Un DSN peut prendre 2 formes : soit un hash contenant les différents paramètres, soit une chaîne de caractères.
- * Les hashs doivent contenir 5 clés/valeurs :
- * - type : "mysqli" pour les bases de données MySQL
- * - host : nom de la machine hébergeant la base de données ("localhost" par exemple)
- * - login : nom de l'utilisateur de la base de données
- * - password : mot de passe de l'utilisateur
- * - base : nom de la base de données
- * Plus un clé optionnelle : "localRead", à mettre à true si la base de données est répliquée en local.
- *
- * Pour les DSN sous forme de chaînes de caractères, ils s'écrivent :
+ * Le paramétrage de la connexion à la base de données se fait sous la forme d'une chaîne de caractères :
  * <pre>type://login:password@host/base</pre>
  * exemple : mysqli://user:pwd@localhost/database
- * Un paramètre supplémentaire peut être ajouté pour indiquer que la base est répliquée en local pour la
- * lecture. Cela se fait en ajoutant ":1" à la fin du DNS.
  *
  * Exemple simple d'utilisation :
  * <code>
@@ -71,15 +53,11 @@ require_once("finebase/DatabaseException.php");
  * </code>
  *
  * @author	Amaury Bouchard <amaury.bouchard@finemedia.fr>
- * @copyright	© 2010, FineMedia
- * @version	$Id: FineDatabase.php 581 2011-07-01 16:35:19Z abouchard $
+ * @copyright	© 2007-2012, FineMedia
+ * @version	$Id: FineDatabase.php 629 2012-06-26 11:39:42Z abouchard $
  * @package	FineBase
  */
-class FineDatabase {
-	/** Instance unique de l'objet. */
-	static private $_instance = null;
-	/** DSN utilisé pour créer le singleton. */
-	static private $_singletonDsn = null;
+class FineDatabase extends FineDatasource {
 	/** Objet de connexion à la base de données. */
 	private $_db = null;
 	/** Paramètres de connexion à la base de données. */
@@ -89,57 +67,26 @@ class FineDatabase {
 	/**
 	 * Usine de fabrication de l'objet.
 	 * Crée une instance d'une version concrête de l'objet, en fonction des paramètres fournis.
-	 * @param	string|array	$dsn	Chaîne ou hash contenant les paramètres de connexion: type ('mysqli' ou 'sqlite'), host
-	 *					(nom du serveur pour MySQLi), login (MySQLi), password (MySQLi), base (nom de la base de
-	 *					données pour MySQLi), path (chemin vers le fichier pour SQLite), mode (mode d'ouverture
-	 *					du fichier pour SQLite).
+	 * @param	string	$dsn	DSN de connexion à la base de données.
 	 * @return	FineDatabase	L'objet FineDatabase créé.
 	 * @throws	DatabaseException
 	 */
 	static public function factory($dsn) {
-		FineLog::log("finebase", FineLog::DEBUG, "Database object creation with DSN: '$dsn'.");
+		FineLog::log('finebase', FineLog::DEBUG, "Database object creation with DSN: '$dsn'.");
 		// extraction des paramètres de connexion
-		$localRead = false;
-		if (is_string($dsn) && preg_match("/^([^:]+):\/\/([^:@]+):?([^@]+)?@([^\/:]+):?(\d+)?\/(.*)$/", $dsn, $matches)) {
+		if (preg_match("/^([^:]+):\/\/([^:@]+):?([^@]+)?@([^\/:]+):?(\d+)?\/(.*)$/", $dsn, $matches)) {
 			$type = $matches[1];
 			$login = $matches[2];
 			$password = $matches[3];
 			$host = $matches[4];
 			$port = $matches[5];
 			$base = $matches[6];
-			if (strpos($base, ':') !== false) {
-				$res = explode(':', $base);
-				$base = $res[0];
-				if (is_numeric($res[1]) && $res[1] == 1)
-					$localRead = true;
-			}
-		} else if (is_array($dsn)) {
-			$type = $dsn['type'];
-			$host = $dsn['host'];
-			$port = $dsn['port'];
-			$login = $dsn['login'];
-			$password = $dsn['password'];
-			$base = $dsn['base'];
-			$localRead = (isset($dsn['localRead']) && $dsn['localRead'] === true) ? true : false;
-		} else
+		}
+		if ($type != 'mysqli')
 			throw new DatabaseException("No DSN provided.", DatabaseException::FUNDAMENTAL);
 		// création de l'instance
-		$instance = new FineDatabase($host, $login, $password, $base, (int)$port, $localRead);
+		$instance = new FineDatabase($host, $login, $password, $base, (int)$port);
 		return ($instance);
-	}
-	/**
-	 * Retourne une instance unique de l'objet.
-	 * @param	string|array	$dsn	(optionnel) Paramètres de connexion à la base de données. Voir le constructeur pour plus d'infos.
-	 * @return	FineDatabase	L'instance globale unique de l'objet.
-	 * @throw	ApplicationException
-	 */
-	static public function singleton($dsn=null) {
-		FineLog::log("finebase", FineLog::DEBUG, "Singleton database object creation with DSN: '$dsn'.");
-		if (!isset(self::$_instance))
-			self::$_instance = FineDatabase::factory($dsn);
-		if (isset(self::$_singletonDsn) && $dsn != self::$_singletonDsn)
-			throw new ApplicationException("Trying to get an existing singleton with a different DSN.", ApplicationException::API);
-		return (self::$_instance);
 	}
 	/**
 	 * Constructeur. Ouvre une connexion à la base de données.
@@ -148,17 +95,15 @@ class FineDatabase {
 	 * @param	string	$password	Mot de passe de l'utilisateur.
 	 * @param	string	$base		Nom de la base sur laquelle se connecter.
 	 * @param	int	$port		Numéro de port sur lequel se connecter.
-	 * @param	bool	$localRead	(optionnel) Indique si la base est répliquée en local pour lecture. False par défaut.
 	 */
-	public function __construct($host, $login, $password, $base, $port, $localRead=false) {
-		FineLog::log("finebase", FineLog::DEBUG, "MySQL object creation. base: '$base'.");
+	private function __construct($host, $login, $password, $base, $port) {
+		FineLog::log('finebase', FineLog::DEBUG, "MySQL object creation. base: '$base'.");
 		$this->_params = array(
 			'host'		=> $host,
 			'login'		=> $login,
 			'password'	=> $password,
 			'base'		=> $base,
-			'port'		=> $port,
-			'localRead'	=> $localRead
+			'port'		=> $port
 		);
 	}
 	/** Destructeur. Ferme la connexion. */
@@ -185,9 +130,9 @@ class FineDatabase {
 	 * Définit l'encodage de caractères à utiliser.
 	 * @param	string	$charset	(optionnel) L'encodage à utiliser. "utf8" par défaut.
 	 */
-	public function charset($charset="utf8") {
+	public function charset($charset='utf8') {
 		$this->_connect();
-		$this->_db->set_charset("utf8");
+		$this->_db->set_charset($charset);
 	}
 
 	/* ***************************** TRANSACTIONS ************************ */
@@ -196,9 +141,9 @@ class FineDatabase {
 	 * @throws      DatabaseException
 	 */
 	public function startTransaction() {
-		FineLog::log("finebase", FineLog::DEBUG, "Beginning transaction.");
+		FineLog::log('finebase', FineLog::DEBUG, "Beginning transaction.");
 		$this->_connect();
-		if ($this->_db->query("START TRANSACTION") === false)
+		if ($this->_db->query('START TRANSACTION') === false)
 			throw new DatabaseException("Unable to open a new transaction.", DatabaseException::QUERY);
 	}
 	/**
@@ -206,7 +151,7 @@ class FineDatabase {
 	 * @throws      DatabaseException
 	 */
 	public function commit() {
-		FineLog::log("finebase", FineLog::DEBUG, "Commiting transaction.");
+		FineLog::log('finebase', FineLog::DEBUG, "Commiting transaction.");
 		$this->_connect();
 		if ($this->_db->commit() === false)
 			throw new DatabaseException("Error during transaction commit.", DatabaseException::QUERY);
@@ -216,7 +161,7 @@ class FineDatabase {
 	 * @throws      DatabaseException
 	 */
 	public function rollback() {
-		FineLog::log("finebase", FineLog::DEBUG, "Rollbacking transaction.");
+		FineLog::log('finebase', FineLog::DEBUG, "Rollbacking transaction.");
 		$this->_connect();
 		if ($this->_db->rollback() === false)
 			throw new DatabaseException("Error during transaction rollback.", DatabaseException::QUERY);
@@ -288,10 +233,8 @@ class FineDatabase {
 	 * @throws	DatabaseException
 	 */
 	public function lastInsertId() {
-		$result = $this->_query("SELECT LAST_INSERT_ID() AS id");
-		$res = $result->fetch_assoc();
-		$result->free_result();
-		return ($res['id']);
+		$this->_connect();
+		return ($this->_db->insert_id);
 	}
 
 	/* ********************** METHODES PRIVEES **************** */
@@ -302,7 +245,7 @@ class FineDatabase {
 	 * @throws	DatabaseException
 	 */
 	private function _query($sql) {
-		FineLog::log("finebase", FineLog::DEBUG, "SQL query: $sql");
+		FineLog::log('finebase', FineLog::DEBUG, "SQL query: $sql");
 		$this->_connect();
 		if (($result = $this->_db->query($sql)) === false)
 			throw new DatabaseException("Request failed: " . $this->_db->error, DatabaseException::QUERY);
