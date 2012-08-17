@@ -1,9 +1,9 @@
 <?php
 
-if (!class_exists("FineLog")) {
+if (!class_exists('\FineLog')) {
 
-require_once("finebase/IOException.php");
-require_once("finebase/ApplicationException.php");
+require_once('finebase/IOException.php');
+require_once('finebase/ApplicationException.php');
 
 /**
  * Objet de gestion des messages de log.
@@ -70,25 +70,25 @@ require_once("finebase/ApplicationException.php");
  * A noter que les messages sans classe désignée sont liés à la classe FineLog::DEFAULT_CLASS (qui a la valeur "default").
  *
  * @author	Amaury Bouchard <amaury.bouchard@finemedia.fr>
- * @copyright	© 2007-2010, FineMedia
+ * @copyright	© 2007-2012, FineMedia
  * @package	FineBase
- * @version	$Id: FineLog.php 605 2012-03-14 18:18:58Z ckhalaghi $
+ * @version	$Id: FineLog.php 628 2012-06-26 11:08:36Z abouchard $
  */
 class FineLog {
 	/** Constante - message de débuggage (priorité la plus faible). */
-	const DEBUG = 10;
+	const DEBUG = 'DEBUG';
 	/** Constante - message d'information (niveau par défaut). */
-	const INFO = 20;
+	const INFO = 'INFO';
 	/** Constante - notification ; message normal mais significatif (seuil par défaut). */
-	const NOTE = 30;
+	const NOTE = 'NOTE';
 	/** Constante - message d'alerte ; l'application ne fonctionne pas normalement mais elle peut continuer à fonctionner. */
-	const WARN = 40;
+	const WARN = 'WARN';
 	/** Constante - message d'erreur ; l'application ne fonctionne pas normalement et elle doit s'arrêter. */
-	const ERROR = 50;
+	const ERROR = 'ERROR';
 	/** Constante - message d'erreur critique ; l'application risque d'endommager son environnement (filesystem ou base de données). */
-	const CRIT = 60;
+	const CRIT = 'CRIT';
 	/** Nom de la classe de log par défaut. */
-	const DEFAULT_CLASS = "default";
+	const DEFAULT_CLASS = 'default';
 	/** Chemin vers le fichier dans lequel écrire les messages de log. */
 	static private $_logPath = null;
 	/** Tableau de fonctions à exécuter pour écrire les messages de log de manière personnalisée. */
@@ -97,14 +97,23 @@ class FineLog {
 	static private $_threshold = array();
 	/** Seuil par défaut pour les messages de log dont la classe n'est pas connue. */
 	static private $_defaultThreshold = self::NOTE;
+	/** Tableau contenant l'ordre affecté à chaque niveau de log. */
+	static private $_levels = array(
+		'DEBUG'	=> 10,
+		'INFO'	=> 20,
+		'NOTE'	=> 30,
+		'WARN'	=> 40,
+		'ERROR'	=> 50,
+		'CRIT'	=> 60
+	);
 	/** Tableau contenant les labels correspondant aux niveaux de log. */
 	static private $_labels = array(
-		10 => "DEBUG",
-		20 => "INFO ",
-		30 => "NOTE ",
-		40 => "WARN ",
-		50 => "ERROR",
-		60 => "CRIT "
+		'DEBUG'	=> 'DEBUG',
+		'INFO'	=> 'INFO ',
+		'NOTE'	=> 'NOTE ',
+		'WARN'	=> 'WARN ',
+		'ERROR'	=> 'ERROR',
+		'CRIT'	=> 'CRIT '
 	);
 
 	/* ******************** METHODES PUBLIQUES ****************** */
@@ -163,13 +172,13 @@ class FineLog {
 			$message = $classOrMessageOrPriority;
 		}
 		// le message n'est pas écrit si sa priorité est inférieure au seuil défini
-		if ((isset(self::$_threshold[$class]) && $priority < self::$_threshold[$class]) ||
-		    (!isset(self::$_threshold[$class]) && $priority < self::$_defaultThreshold))
+		if ((isset(self::$_threshold[$class]) && self::$_levels[$priority] < self::$_levels[self::$_threshold[$class]]) ||
+		    (!isset(self::$_threshold[$class]) && self::$_levels[$priority] < self::$_levels[self::$_defaultThreshold]))
 			return;
 		// traitement du log
 		$backtrace = debug_backtrace();
 		if (is_array($backtrace) && count($backtrace) > 1) {
-			$txt = "";
+			$txt = '';
 			if (isset($backtrace[1]['file']) && isset($backtrace[1]['line']))
 				$txt .= '[' . basename($backtrace[1]['file']) . ':' . $backtrace[1]['line'] . '] ';
 			if (isset($backtrace[1]['class']) && isset($backtrace[1]['type']))
@@ -183,11 +192,11 @@ class FineLog {
 					if (++$offset < 2)
 						continue;
 					$txt .= "\n\t#" . ($offset - 1) . '  ' . 
-										(isset($trace['class']) ? $trace['class'] : '') . 
-										(isset($trace['type']) ? $trace['type'] : '') . 
-										(isset($trace['function']) ? $trace['function'] : '') . '() called at [' .
-										(isset($trace['file']) ? $trace['file'] : '') . ':' . 
-										(isset($trace['line']) ? $trace['line'] : '') . ']';
+						(isset($trace['class']) ? $trace['class'] : '') . 
+						(isset($trace['type']) ? $trace['type'] : '') . 
+						(isset($trace['function']) ? $trace['function'] : '') . '() called at [' .
+						(isset($trace['file']) ? $trace['file'] : '') . ':' . 
+						(isset($trace['line']) ? $trace['line'] : '') . ']';
 				}
 			}
 			$message = $txt;
@@ -224,7 +233,7 @@ class FineLog {
 			$class = $classOrPriority;
 		}
 		// le message n'est pas écrit si sa priorité est inférieure au seuil défini
-		if (!isset(self::$_threshold[$class]) || $priority < self::$_threshold[$class])
+		if (!isset(self::$_threshold[$class]) || self::$_levels[$priority] < self::$_levels[self::$_threshold[$class]])
 			return;
 		// traitement
 		$txt = '[' . basename($file) . ":$line]";
