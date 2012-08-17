@@ -1,7 +1,6 @@
 <?php
 
-require_once("finebase/FineLog.php");
-require_once("finebase/ApplicationException.php");
+require_once('finebase/FineDatasource.php');
 
 /**
  * Objet de gestion des données en cache.
@@ -12,7 +11,7 @@ require_once("finebase/ApplicationException.php");
  *
  * <code>
  * // instanciation
- * $cache = FineCache::singleton();
+ * $cache = FineCache::factory('memcache://localhost');
  * // ajout d'une variable en cache
  * $cache->set("nom de la variable", $data);
  * // récupération d'une variable de cache
@@ -22,15 +21,15 @@ require_once("finebase/ApplicationException.php");
  * </code>
  *
  * @author	Amaury Bouchard <amaury.bouchard@finemedia.fr>
- * @copyright	© 2009-2010, FineMedia
+ * @copyright	© 2009-2012, FineMedia
  * @package	FineBase
  * @version	$Id$
  */
-class FineCache {
+class FineCache extends FineDatasource {
 	/** Constante : Préfixe des variables de cache contenant le "sel" de préfixe. */
 	const PREFIX_SALT_PREFIX = '|_cache_salt';
-	/** Instance unique de l'objet. */
-	static private $_instance = null;
+	/** Constante : Numéro de port Memcached par défaut. */
+	const DEFAULT_MEMCACHE_PORT = 11211;
 	/** Indique si on doit utiliser le cache ou non. */
 	private $_enabled = false;
 	/** Objet de connexion au serveur memcache. */
@@ -42,41 +41,43 @@ class FineCache {
 
 	/* ************************** CONSTRUCTION ******************** */
 	/**
-	 * Retourne l'instance unique.
-	 * @param	string	$cacheServer	(optionnel) Chaîne de connexion aux serveurs de cache.
-	 * @return	FineCache	L'instance.
+	 * Crée un objet FineCache.
+	 * @param	string	$dsn	Chaîne de connexion aux serveurs de cache.
+	 * @return	FineCache	L'objet FineCache créé.
 	 */
-	static public function singleton($cacheServer=null) {
-		FineLog::log('finebase', FineLog::DEBUG, "Singleton FineCache object creation.");
-		if (!isset(self::$_instance))
-			self::$_instance = new FineCache($cacheServer);
-		return (self::$_instance);
+	static public function factory($dsn) {
+		FineLog::log('finebase', FineLog::DEBUG, "FineCache object creation.");
+		return (new FineCache($dsn));
 	}
 	/**
 	 * Constructeur. Effectue une connexion au serveur memcache.
-	 * @param	string	$cacheServer	(optionnel) Chaîne de connexion aux serveurs de cache.
+	 * @param	string	$dsn	Chaîne de connexion aux serveurs de cache.
+	 * @throws	DatabaseException	Si le DSN fourni est incorrect.
 	 */
-	public function __construct($cacheServer=null) {
-		if (extension_loaded('memcache')) {
-			$serverList = !empty($cacheServer) ? $cacheServer : getenv('FINE_MEMCACHE_SERVERS');
-			if (!empty($serverList)) {
-				$memcache = new MemCached();
-				$memcache->setOption(Memcached::OPT_COMPRESSION, true);
-				$servers = explode(';', $serverList);
-				foreach ($servers as &$server) {
-					if (empty($server))
-						continue;
+	private function __construct($dsn) {
+		if (substr($dsn, 0, 11) !== 'memcache://')
+			throw new DatabaseException("Invalid cache DSN '$dsn'.", DatabaseException::FUNDAMENTAL);
+		$dsn = substr($dsn, 11);
+		if (extension_loaded('memcached') && !empty($dsn)) {
+			$memcache = new MemCached();
+			$memcache->setOption(Memcached::OPT_COMPRESSION, true);
+			$servers = explode(';', $dsn);
+			foreach ($servers as &$server) {
+				if (empty($server))
+					continue;
+				if (strpos($server, ':') === false)
+					$server = array($server, self::DEFAULT_MEMCACHE_PORT);
+				else {
 					list($host, $port) = explode(':', $server);
 					$server = array(
 						$host,
-						($port ? $port : 11211)
+						($port ? $port : self::DEFAULT_MEMCACHE_PORT)
 					);
 				}
-				if ($memcache->addServers($servers)) {
-					$this->_memcache = $memcache;
-					$this->_enabled = true;
-					return;
-				}
+			}
+			if ($memcache->addServers($servers)) {
+				$this->_memcache = $memcache;
+				$this->_enabled = true;
 			}
 		}
 	}
@@ -154,12 +155,12 @@ class FineCache {
 	/**
 	 * Récupération d'une donnée dans le cache.
 	 * @param	string		$key		Clé d'indexation de la donnée.
-	 * @param	function	$callback	(optionnel) Fonction appelée si la donnée n'a pas été trouvée en cache.
+	 * @param	Closure		$callback	(optionnel) Fonction appelée si la donnée n'a pas été trouvée en cache.
 	 *						Les données retournées par cette fonction seront ajoutées en cache, et retournées
 	 *						par la méthode.
 	 * @return	mixed	La donnée, ou NULL si la donnée n'était pas présente dans le cache.
 	 */
-	public function get($key, $callback=null) {
+	public function get($key, Closure $callback=null) {
 		$key = $this->_getSaltedPrefix() . $key;
 		$data = null;
 		if ($this->_enabled && $this->_memcache) {
@@ -167,7 +168,7 @@ class FineCache {
 			if ($data === false && $this->_memcache->getResultCode() != Memcached::RES_SUCCESS)
 				$data = null;
 		}
-		if (is_null($data) && $callback instanceof Closure) {
+		if (is_null($data) && isset($callback)) {
 			$data = $callback();
 			$this->set($key, $data);
 		}
@@ -202,7 +203,7 @@ class FineCache {
 		if ($this->_enabled && $this->_memcache)
 			$salt = $this->_memcache->get($saltKey);
 		// génération du sel si besoin
-		if (!is_string($salt)) {
+		if (!isset($salt) || !is_string($salt)) {
 			$salt = substr(hash('md5', time() . mt_rand()), 0, mt_rand(4, 8));
 			if ($this->_enabled && $this->_memcache)
 				$this->_memcache->set($saltKey, $salt, 0);
