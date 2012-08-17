@@ -59,8 +59,9 @@ class FineHTMLCleaner {
 		$purifier = new HTMLPurifier($config);
 		$html = $purifier->purify($html);
 		// traitement des liens
-		if ($urlProcess)
-			$html = preg_replace('/(http:\/\/)([^\s<\),]+)/e', "'<a href=\"\\1\\2\" title=\"\\1\\2\">'.((strlen('\\1\\2')>55)?(substr('\\1\\2',0,55).'...'):'\\1\\2').'</a>'", $html);
+		if ($urlProcess) {
+			$html = preg_replace('/(http[s]?:\/\/)([^\s<\),]+)/e', "'<a href=\"\\1\\2\" title=\"\\1\\2\">'.((strlen('\\1\\2')>55)?(substr('\\1\\2',0,55).'...'):'\\1\\2').'</a>'", $html);
+		}
 		// traitement des liens
 		if ($nofollow)
 			$html = str_replace("<a href", "<a target='_blank' rel='nofollow' href", $html);
