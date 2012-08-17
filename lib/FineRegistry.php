@@ -1,7 +1,7 @@
 <?php
 
-require_once("finebase/FineLog.php");
-require_once("finebase/IOException.php");
+require_once('finebase/FineLog.php');
+require_once('finebase/IOException.php');
 
 /**
  * Objet servant au stockage neutre de données, répondant au design pattern Registry.
@@ -37,16 +37,20 @@ require_once("finebase/IOException.php");
  * @author	Amaury Bouchard <amaury.bouchard@finemedia.fr>
  * @copyright	© 2007, FineMedia
  * @package	FineBase
- * @version	$Id: FineRegistry.php 569 2011-04-15 17:06:33Z abouchard $
+ * @version	$Id: FineRegistry.php 631 2012-06-26 13:58:52Z jhamrouni $
  */
 class FineRegistry {
 	/** Hash ou objet contenant les données stockées par l'objet. */
 	protected $_data = null;
 
 	/* ************************ CONSTRUCTION ********************** */
-	/** Constructeur. */
-	public function __construct() {
-		FineLog::log("finebase", FineLog::DEBUG, "Registry object creation.");
+	/**
+	 * Constructeur.
+	 * @param	array	$data	(optionnel) Tableau de données utilisé pour remplir le registre.
+	 */
+	public function __construct($data=null) {
+		FineLog::log('finebase', FineLog::DEBUG, "Registry object creation.");
+		$this->_data = isset($data) ? $data : array();
 	}
 	/** Destructeur. */
 	public function __destruct() {
@@ -56,38 +60,45 @@ class FineRegistry {
 
 	/* ****************** MANIPULATION DES DONNEES **************** */
 	/**
-	 * Retourne les données stockées par l'objet.
-	 * @param	string	key	Nom de la donnée à récupérer.
-	 * @return	mixed	La valeur de la donnée recherchée.
+	 * Ajoute une donnée dans le registre.
+	 * @param	string	$key	Clé d'indexation de la donnée.
+	 * @param	mixed	$data	Donnée à insérer.
+	 * @return	FineRegistry	L'instance courante de l'objet.
 	 */
-	public function __get($key) {
-		if (is_object($this->_data))
-			return ($this->_data->$key);
-		if (is_array($this->_data))
-			return ($this->_data[$key]);
-		return (null);
+	public function set($key, $data) {
+		$this->_data[$key] = $data;
+		return ($this);
 	}
 	/**
 	 * Retourne les données stockées par l'objet.
-	 * @param	string	key	Nom de la donnée à récupérer.
+	 * @param	string	$key		Nom de la donnée à récupérer.
+	 * @param	mixed	$default	(optionnel) Valeur par défaut à retourner si la valeur demandée n'existe pas.
 	 * @return	mixed	La valeur de la donnée recherchée.
 	 */
-	public function get($key) {
-		if (is_object($this->_data))
-			return ($this->_data->$key);
-		if (is_array($this->_data))
+	public function get($key, $default=null) {
+		if (isset($this->_data[$key]))
 			return ($this->_data[$key]);
-		return (null);
+		return ($default);
+	}
+	/**
+	 * Retire un élément du registre.
+	 * @param	string	$key	Clé d'indexation de la donnée à supprimer.
+	 * @return	FineRegistry	L'instance courante de l'objet.
+	 */
+	public function remove($key) {
+		$this->_data[$key] = null;
+		unset($this->_data[$key]);
+		return ($this);
 	}
 	/**
 	 * Lit un fichier INI et stocke ses informations.
-	 * @param	string	path	Chemin vers le fichier INI.
-	 * @param	string	key	(optionnel) Nom sous lequel le contenu du fichier INI sera disponible.
+	 * @param	string	$path	Chemin vers le fichier INI.
+	 * @param	string	$key	(optionnel) Nom sous lequel le contenu du fichier INI sera disponible.
 	 *				Si cette clé n'est pas fournie, l'ensemble des données du
 	 *				fichier INI remplacera les données actuellement stockées.
 	 */
 	public function readIni($path, $key=null) {
-		FineLog::log("finebase", FineLog::DEBUG, "Reading INI file '$path'.");
+		FineLog::log('finebase', FineLog::DEBUG, "Reading INI file '$path'.");
 		$result = parse_ini_file($path, true);
 		if (is_null($key))
 			$this->_data = $result;
@@ -96,14 +107,14 @@ class FineRegistry {
 	}
 	/**
 	 * Lit un fichier JSON et stocke ses informations.
-	 * @param	string	path	Chemin vers le fichier JSON.
-	 * @param	string	key	(optionnel) Nom sous lequel le contenu du fichier JSON sera disponible.
+	 * @param	string	$path	Chemin vers le fichier JSON.
+	 * @param	string	$key	(optionnel) Nom sous lequel le contenu du fichier JSON sera disponible.
 	 *				Si cette clé n'est pas fournie, l'ensemble des données du
 	 *				fichier JSON remplacera les données actuellement stockées.
 	 */
 	public function readJson($path, $key=null) {
-		FineLog::log("finebase", FineLog::DEBUG, "Reading JSON file '$path'.");
-		$result = json_decode(file_get_contents($path));
+		FineLog::log('finebase', FineLog::DEBUG, "Reading JSON file '$path'.");
+		$result = json_decode(file_get_contents($path), true);
 		if (is_null($key))
 			$this->_data = $result;
 		else
@@ -111,10 +122,10 @@ class FineRegistry {
 	}
 	/**
 	 * Lit un fichier XML et stocke ses informations.
-	 * @param	string	path	Chemin vers le fichier XML.
-	 * @param	string	key	(optionnel) Nom sous lequel le contenu du fichier JSON sera disponible.
+	 * @param	string	$path	Chemin vers le fichier XML.
+	 * @param	string	$key	(optionnel) Nom sous lequel le contenu du fichier XML sera disponible.
 	 *				Si cette clé n'est pas fournie, l'ensemble des données du
-	 *				fichier JSON remplacera les données actuellement stockées.
+	 *				fichier XML remplacera les données actuellement stockées.
 	 * @throws	IOException
 	 */
 	public function readXml($path, $key=null) {
