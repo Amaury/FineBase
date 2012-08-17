@@ -19,20 +19,15 @@ require_once("finebase/FineCache.php");
  * Exemple d'utilisation en 3 scripts. Le premier script crée une session dès
  * la première visite d'un utilisateur :
  * <code>
- * // récupération de l'objet unique de session
- * $session = FineSession::singleton($db);
+ * // création de l'objet de session
+ * $session = FineSession::factory($db);
  * // stockage d'une variable de session
  * $session->set("trululu", "pouet");
  * </code>
- * Le deuxième script est exécuté après l'identification de l'utilisateur :
- * <code>
- * // récupération de l'objet unique de session
- * $session = FineSession::singleton($db);
- * </code>
- * Le troisième script utilise les informations stockées, puis efface toutes les
+ * Le deuxième script utilise les informations stockées, puis efface toutes les
  * données de session :
  * <code>
- * $session = FineSession::singleton($db);
+ * $session = FineSession::factory($db);
  * // récupération de la variable de session
  * $trululu = $session->get("trululu");
  * // efface toutes les données de session
@@ -42,7 +37,7 @@ require_once("finebase/FineCache.php");
  * @author	Amaury Bouchard <amaury@amaury.net>
  * @copyright	© 2010, FineMedia
  * @package	FineBase
- * @version	$Id: FineSession.php 591 2011-11-14 16:40:02Z abouchard $
+ * @version	$Id: FineSession.php 629 2012-06-26 11:39:42Z abouchard $
  */
 class FineSession {
 	/** Constante : Durée de session courte (1 journée). */
@@ -51,8 +46,6 @@ class FineSession {
 	const MEDIUM_DURATION = 2592000;
 	/** Constante : Durée de session longue (1 an). */
 	const LONG_DURATION = 31536000;
-	/** Instance unique de l'objet. */
-	static private $_instance = null;
 	/** Objet de gestion du cache. */
 	private $_cache = null;
 	/** Nom du cookie de session.*/
@@ -66,34 +59,30 @@ class FineSession {
 
 	/* ************************** CONSTRUCTION ******************** */
 	/**
-	 * Retourne l'instance unique.
-	 * @param	FineCache	$cache		(optionnel) Instance de connexion au cache.
+	 * Crée un objet FineSession.
+	 * @param	FineDatasource	$cache		(optionnel) Instance de connexion au cache.
 	 * @param	string		$cookieName	(optionnel) Nom du cookie de session. "FINE_SESSION" par défaut.
 	 * @param	int		$duration	(optionnel) Durée de la session. Un an par défaut.
 	 * @param	int		$renewDelay	(optionnel) Délai avant recréation de l'identifiant de session. 20 mn par défaut.
 	 * @return	FineSession	L'instance.
 	 */
-	static public function singleton(FineCache $cache=null, $cookieName="FINE_SESSION", $duration=31536000, $renewDelay=1200) {
-		FineLog::log('finebase', FineLog::DEBUG, "Singleton session object creation.");
-		if (!isset(self::$_instance))
-			self::$_instance = new FineSession($cache, $cookieName, $duration, $renewDelay);
-		return (self::$_instance);
+	static public function factory(FineDatasource $cache=null, $cookieName='FINE_SESSION', $duration=31536000, $renewDelay=1200) {
+		return (new FineSession($cache, $cookieName, $duration, $renewDelay));
 	}
 	/**
 	 * Constructeur.
-	 * @param	FineCache	$cache		Instance de connexion au cache.
+	 * @param	FineDatasource	$cache		Instance de connexion au cache.
 	 * @param	string		$cookieName	Nom du cookie de session. "FINE_SESSION" par défaut.
 	 * @param	int		$duration	Durée de la session.
 	 * @param	int		$renewDelay	Délai avant recréation de l'identifiant de session.
 	 */
-	private function __construct(FineCache $cache, $cookieName, $duration, $renewDelay) {
+	private function __construct(FineDatasource $cache=null, $cookieName=null, $duration=null, $renewDelay=null) {
 		FineLog::log('finebase', FineLog::DEBUG, "Session object creation.");
 		// récupération du cache
-		if (isset($cache))
+		if (isset($cache) && $cache->isEnabled())
 			$this->_cache = clone $cache;
 		// si le cache n'est pas actif, on utilise les sessions PHP standard
-		if (!isset($this->_cache) || !$this->_cache->isEnabled()) {
-			$this->_cache = null;
+		if (!isset($this->_cache)) {
 			session_start();
 			return;
 		}
@@ -107,7 +96,7 @@ class FineSession {
 		// recherche des données de session
 		if (!empty($oldSessionId)) {
 			// récupération des données en cache
-			$data = $this->_cache->get("sess:" . $oldSessionId);
+			$data = $this->_cache->get("sess:$oldSessionId");
 			if (isset($data['_magic']) && $data['_magic'] == 'Ax')
 				$this->_data = isset($data['data']) ? $data['data'] : null;
 			else {
