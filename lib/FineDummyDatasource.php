@@ -12,6 +12,14 @@ require_once('finebase/FineDatasource.php');
  */
 class FineDummyDatasource extends FineDatasource {
 	/**
+	 * Usine de fabrication de l'objet.
+	 * @param	string	$dsn	DSN de connexion (non utilisé).
+	 * @return	FineDummyDatasource	L'objet FineDummyDatasource créé.
+	 */
+	static public function factory($dsn=null) {
+		return (new FineDummyDatasource());
+	}
+	/**
 	 * Quelque soit la méthode appelée sur cet objet, l'appel fonctionnera.
 	 * @param	string	$name	Nom de la méthode appelée.
 	 * @param	array	$args	Liste des paramètres transmis à la méthode.
