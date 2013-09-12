@@ -3,7 +3,7 @@
 if (!class_exists("FineLock")) {
 
 require_once("finebase/FineLog.php");
-require_once("finebase/IOException.php");
+require_once("finebase/FineIOException.php");
 
 /**
  * Objet de gestion des locks.
@@ -17,7 +17,7 @@ require_once("finebase/IOException.php");
  *     $lock->lock();
  *     // traitements particuliers
  *     $lock->unlock();
- * } catch (IOException $e) {
+ * } catch (FineIOException $e) {
  *     // erreur d'entrée-sortie, pouvant venir du lock
  * } catch ($e) {
  *     // erreur
@@ -47,7 +47,7 @@ class FineLock {
 	 * @param	string	$path		(optionnel) Chemin complet du fichier à locker.
 	 *					Par défaut, locke le programme qui s'exécute.
 	 * @param	int	$timeout	(optionnel) Durée de lock autorisée sur ce fichier, en secondes.
-	 * @throws	IOException
+	 * @throws	FineIOException
 	 */
 	public function lock($path=null, $timeout=null) {
 		$filePath = is_null($path) ? $_SERVER['SCRIPT_FILENAME'] : $path;
@@ -57,7 +57,7 @@ class FineLock {
 		if (!($this->_fileHandle = @fopen($this->_lockPath, "a+"))) {
 			$lockPath = $this->_lockPath;
 			$this->_reset();
-			throw new IOException("Unable to open file '$lockPath'.", IOException::UNREADABLE);
+			throw new FineIOException("Unable to open file '$lockPath'.", FineIOException::UNREADABLE);
 		}
 		if (!flock($this->_fileHandle, LOCK_EX + LOCK_NB)) {
 			// impossible de locker le fichier : on vérifie son âge
@@ -78,7 +78,7 @@ class FineLock {
 			}
 			fclose($this->_fileHandle);
 			$this->_reset();
-			throw new IOException("Unable to lock file '$lockPath'.", IOException::UNLOCKABLE);
+			throw new FineIOException("Unable to lock file '$lockPath'.", FineIOException::UNLOCKABLE);
 		}
 		// lock OK : on écrit dedans le PID
 		ftruncate($this->_fileHandle, 0);
@@ -86,20 +86,20 @@ class FineLock {
 	}
 	/**
 	 * Libération d'un lock.
-	 * @throws	IOException
+	 * @throws	FineIOException
 	 */
 	public function unlock() {
 		if (is_null($this->_fileHandle) || is_null($this->_lockPath)) {
-			throw new IOException("No file to unlock.", IOException::NOT_FOUND);
+			throw new FineIOException("No file to unlock.", FineIOException::NOT_FOUND);
 		}
 		flock($this->_fileHandle, LOCK_UN);
 		if (!fclose($this->_fileHandle)) {
 			$this->_reset();
-			throw new IOException("Unable to close lock file.", IOException::FUNDAMENTAL);
+			throw new FineIOException("Unable to close lock file.", FineIOException::FUNDAMENTAL);
 		}
 		if (!unlink($this->_lockPath)) {
 			$this->_reset();
-			throw new IOException("Unable to delete lock file.", IOException::FUNDAMENTAL);
+			throw new FineIOException("Unable to delete lock file.", FineIOException::FUNDAMENTAL);
 		}
 		$this->_reset();
 	}

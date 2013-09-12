@@ -9,7 +9,7 @@ require_once('finebase/FineDatasource.php');
  *
  * Le paramétrage de la connexion à la base de données se fait sous la forme d'une chaîne de caractères :
  * <pre>type://login:password@host/base</pre>
- * exemple : mysqli://user:pwd@localhost/database
+ * exemple : <tt>mysqli://user:pwd@localhost/database</tt>
  *
  * Exemple simple d'utilisation :
  * <code>
@@ -26,7 +26,7 @@ require_once('finebase/FineDatasource.php');
  *	 // affichage des résultats
  *       foreach ($result as $titi)
  *               print($titi['id'] . " -> " . $titi['name'] . "\n");
- * } catch (DatabaseException $e) {
+ * } catch (Exception $e) {
  *	 print("Erreur base de données: " . $e->getMessage());
  * }
  * </code>
@@ -35,7 +35,7 @@ require_once('finebase/FineDatasource.php');
  * <code>
  * // creation de l'objet et connexion à la base de données
  * try { $db = FineDatabase::factory("mysqli://user:pwd@localhost/database"); }
- * catch (DatabaseException $e) { }
+ * catch (Exception $e) { }
  * // requêtes transactionnelles
  * try {
  *	 // début de transaction
@@ -46,7 +46,7 @@ require_once('finebase/FineDatasource.php');
  *	 $db->exec("INSERT trululu");
  *	 // commit de la transaction si tout s'est bien passé
  *	 $db->commit();
- * } catch (DatabaseException $e) {
+ * } catch (Exception $e) {
  *	 // rollback de la transaction
  *	 $db->rollback();
  * }
@@ -54,7 +54,7 @@ require_once('finebase/FineDatasource.php');
  *
  * @author	Amaury Bouchard <amaury.bouchard@finemedia.fr>
  * @copyright	© 2007-2012, FineMedia
- * @version	$Id: FineDatabase.php 629 2012-06-26 11:39:42Z abouchard $
+ * @version	$Id: FineDatabase.php 655 2013-09-12 08:39:20Z abouchard $
  * @package	FineBase
  */
 class FineDatabase extends FineDatasource {
@@ -69,7 +69,7 @@ class FineDatabase extends FineDatasource {
 	 * Crée une instance d'une version concrête de l'objet, en fonction des paramètres fournis.
 	 * @param	string	$dsn	DSN de connexion à la base de données.
 	 * @return	FineDatabase	L'objet FineDatabase créé.
-	 * @throws	DatabaseException
+	 * @throws	Exception
 	 */
 	static public function factory($dsn) {
 		FineLog::log('finebase', FineLog::DEBUG, "Database object creation with DSN: '$dsn'.");
@@ -83,7 +83,7 @@ class FineDatabase extends FineDatasource {
 			$base = $matches[6];
 		}
 		if ($type != 'mysqli')
-			throw new DatabaseException("No DSN provided.", DatabaseException::FUNDAMENTAL);
+			throw new Exception("No DSN provided.");
 		// création de l'instance
 		$instance = new FineDatabase($host, $login, $password, $base, (int)$port);
 		return ($instance);
@@ -119,7 +119,7 @@ class FineDatabase extends FineDatasource {
 			return;
 		$this->_db = new mysqli($this->_params['host'], $this->_params['login'], $this->_params['password'], $this->_params['base'], (int)$this->_params['port']);
 		if (mysqli_connect_errno())
-			throw new DatabaseException("MySQLi database connexion error: " . mysqli_connect_error(), DatabaseException::FUNDAMENTAL);
+			throw new Exception("MySQLi database connexion error: " . mysqli_connect_error());
 	}
 	/** Fermeture de connexion. */
 	public function close() {
@@ -138,33 +138,33 @@ class FineDatabase extends FineDatasource {
 	/* ***************************** TRANSACTIONS ************************ */
 	/**
 	 * Démarre une transaction SQL.
-	 * @throws      DatabaseException
+	 * @throws      Exception
 	 */
 	public function startTransaction() {
 		FineLog::log('finebase', FineLog::DEBUG, "Beginning transaction.");
 		$this->_connect();
 		if ($this->_db->query('START TRANSACTION') === false)
-			throw new DatabaseException("Unable to open a new transaction.", DatabaseException::QUERY);
+			throw new Exception("Unable to open a new transaction.");
 	}
 	/**
 	 * Effectue le commit d'une transaction SQL.
-	 * @throws      DatabaseException
+	 * @throws      Exception
 	 */
 	public function commit() {
 		FineLog::log('finebase', FineLog::DEBUG, "Commiting transaction.");
 		$this->_connect();
 		if ($this->_db->commit() === false)
-			throw new DatabaseException("Error during transaction commit.", DatabaseException::QUERY);
+			throw new Exception("Error during transaction commit.");
 	}
 	/**
 	 * Effectue le rollback d'une transaction SQL.
-	 * @throws      DatabaseException
+	 * @throws      Exception
 	 */
 	public function rollback() {
 		FineLog::log('finebase', FineLog::DEBUG, "Rollbacking transaction.");
 		$this->_connect();
 		if ($this->_db->rollback() === false)
-			throw new DatabaseException("Error during transaction rollback.", DatabaseException::QUERY);
+			throw new Exception("Error during transaction rollback.");
 	}
 
 	/* ********************** REQUETES *********************** */
@@ -196,7 +196,7 @@ class FineDatabase extends FineDatasource {
 	/**
 	 * Exécute une requête SQL sans récupération des données.
 	 * @param       string  $sql    La requête à exécuter.
-	 * @throws      DatabaseException
+	 * @throws      Exception
 	 */
 	public function exec($sql) {
 		$this->_query($sql);
@@ -205,7 +205,7 @@ class FineDatabase extends FineDatasource {
 	 * Exécute une requête SQL avec récupération d'une seule ligne de données.
 	 * @param	string	$sql	La requête à exécuter.
 	 * @return	array	Un hash contenant la ligne de données. Ce n'est pas un set de données.
-	 * @throws	DatabaseException
+	 * @throws	Exception
 	 */
 	public function queryOne($sql) {
 		$result = $this->_query($sql);
@@ -217,7 +217,7 @@ class FineDatabase extends FineDatasource {
 	 * Exécute une requête SQL avec récupération des données dans un tableau.
 	 * @param	string	$sql	La requête à exécuter.
 	 * @return	array	La liste de données.
-	 * @throws	DatabaseException
+	 * @throws	Exception
 	 */
 	public function queryAll($sql) {
 		$result = $this->_query($sql);
@@ -230,7 +230,7 @@ class FineDatabase extends FineDatasource {
 	/**
 	 * Retourne la clé primaire du dernier élément créé.
 	 * @return      int     Le nombre entier de la clé primaire.
-	 * @throws	DatabaseException
+	 * @throws	Exception
 	 */
 	public function lastInsertId() {
 		$this->_connect();
@@ -242,13 +242,13 @@ class FineDatabase extends FineDatasource {
 	 * Exécute une requête et retourne son résultat.
 	 * @param	string	$sql	La requête à exécuter.
 	 * @return	mixed	La ressource du résultat.
-	 * @throws	DatabaseException
+	 * @throws	Exception
 	 */
 	private function _query($sql) {
 		FineLog::log('finebase', FineLog::DEBUG, "SQL query: $sql");
 		$this->_connect();
 		if (($result = $this->_db->query($sql)) === false)
-			throw new DatabaseException("Request failed: " . $this->_db->error, DatabaseException::QUERY);
+			throw new Exception("Request failed: " . $this->_db->error);
 		return ($result);
 	}
 }

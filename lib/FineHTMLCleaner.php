@@ -28,15 +28,19 @@ class FineHTMLCleaner {
 	/**
 	 * Nettoie un code HTML de manière à le rendre acceptable sur nos sites.
 	 * @param	string	$html		Le code HTML à nettoyer.
-	 * @param	bool	$urlProcess	Indique s'il faut transformer les URLs présentes dans le texte. True par défaut.
-	 * @param	bool	$nofollow	Indique si les liens doivent être en nofollow. True par défaut.
+	 * @param	bool	$urlProcess	(optionnel) Indique s'il faut transformer les URLs présentes dans le texte. True par défaut.
+	 * @param	bool	$nofollow	(optionnel) Indique si les liens doivent être en nofollow. True par défaut.
+	 * @param	bool	$removeNbsp	(optionnel) Indique s'il faut supprimer les espaces insécables ou non. True par défaut.
 	 * @return	string	Le code HTML après nettoyage.
 	 */
-	static public function process($html, $urlProcess=true, $nofollow=true) {
+	static public function process($html, $urlProcess=true, $nofollow=true, $removeNbsp=true) {
 		// transformation de tags
 		$from = array("<br>", "<b>", "</b>", "<i>", "</i>");
 		$to = array("<br />", "<strong>", "</strong>", "<em>", "</em>");
 		$html = str_replace($from, $to, trim($html));
+		// tout texte doit forcément être commencé par un tag <p> ouvrant au minimum (car sinon, 'purify' suprime les tags <ul>, <li> et peut-être d'autres (mais pas leur contenu)
+		if (substr($html, 0, 1) != '<')
+			$html = '<p>' . $html;
 		// remplacement des double-br (pour générer des paragraphes)
 		$html = preg_replace('/<br \/>\s*<br \/>\s*/m', "\n\n", $html);
 		// config
@@ -45,13 +49,13 @@ class FineHTMLCleaner {
 		$config->set('HTML.DefinitionRev', 1);
 		$config->set('Core.Encoding', 'UTF-8');
 		$config->set('HTML.Doctype', 'XHTML 1.0 Transitional');
-		if ($urlProcess)
-			$config->set('HTML.Allowed', 'h2,p,strong,em,ul,li,br');
-		else
-			$config->set('HTML.Allowed', 'h2,p,strong,em,ul,li,br,a[href]');
+		$allowedHTML = 'h1,h2,h3,p[class],strong,em,ul,ol,li,br,img[src|alt],pre[class],hr,table[class],th,tr,td,tt';
+		if (!$urlProcess)
+			$allowedHTML .= ',a[href|name]';
+		$config->set('HTML.Allowed', $allowedHTML);
 		$config->set('AutoFormat.AutoParagraph', true);
 		$config->set('AutoFormat.RemoveEmpty', true);
-		$config->set('AutoFormat.RemoveEmpty.RemoveNbsp', true);
+		$config->set('AutoFormat.RemoveEmpty.RemoveNbsp', $removeNbsp);
 		$config->set('AutoFormat.RemoveEmpty.RemoveNbsp.Exceptions', '');
 		//$config->set("URI.DisableExternal", true);
 		//$config->set("URI.DisableExternalResources", true);
@@ -64,9 +68,10 @@ class FineHTMLCleaner {
 		}
 		// traitement des liens
 		if ($nofollow)
-			$html = str_replace("<a href", "<a target='_blank' rel='nofollow' href", $html);
+			$html = str_replace("<a href", "<a target=\"_blank\" rel=\"nofollow\" href", $html);
 		else
-			$html = str_replace("<a href", "<a target='_blank' href", $html);
+			$html = str_replace("<a href", "<a target=\"_blank\" href", $html);
+		// retour
 		return ($html);
 	}
 }

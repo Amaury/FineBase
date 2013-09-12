@@ -1,6 +1,6 @@
 <?php
 
-if (!class_exists("DatabaseException")) {
+if (!class_exists('FineDatabaseException')) {
 
 /**
  * Objet de gestion des exceptions de base de données.
@@ -9,9 +9,9 @@ if (!class_exists("DatabaseException")) {
  * @copyright	© 2007, FineMedia
  * @package	FineBase
  * @subpackage	Exception
- * @version	$Id: DatabaseException.php 569 2011-04-15 17:06:33Z abouchard $
+ * @version	$Id: FineDatabaseException.php 641 2013-02-11 12:57:59Z abouchard $
  */
-class DatabaseException extends Exception {
+class FineDatabaseException extends Exception {
 	/** Constante d'erreur fondamentale. */
 	const FUNDAMENTAL = 0;
 	/** Constante d'erreur de connexion. */

@@ -1,6 +1,6 @@
 <?php
 
-if (!class_exists("ApplicationException")) {
+if (!class_exists('FineApplicationException')) {
 
 /**
  * Objet de gestion des exceptions applicatives.
@@ -9,9 +9,9 @@ if (!class_exists("ApplicationException")) {
  * @copyright	© 2007-2010, FineMedia
  * @package	FineBase
  * @subpackage	Exception
- * @version	$Id: ApplicationException.php 569 2011-04-15 17:06:33Z abouchard $
+ * @version	$Id: FineApplicationException.php 641 2013-02-11 12:57:59Z abouchard $
  */
-class ApplicationException extends Exception {
+class FineApplicationException extends Exception {
 	/** Constante d'erreur inconnue. */
 	const UNKNOWN = -1;
 	/** Constante d'erreur d'appel à une API. */
@@ -20,8 +20,10 @@ class ApplicationException extends Exception {
 	const SYSTEM = 1;
 	/** Constante d'erreur d'authentification. */
 	const AUTHENTICATION = 2;
-	/** Constante d'erreur d'autorisation */
+	/** Constante d'erreur d'autorisation. */
 	const UNAUTHORIZED = 3;
+	/** Constante d'erreur de dépendances. */
+	const DEPENDENCY = 4;
 }
 
 } // class_exists

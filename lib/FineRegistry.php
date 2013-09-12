@@ -1,7 +1,7 @@
 <?php
 
 require_once('finebase/FineLog.php');
-require_once('finebase/IOException.php');
+require_once('finebase/FineIOException.php');
 
 /**
  * Objet servant au stockage neutre de données, répondant au design pattern Registry.
@@ -37,7 +37,7 @@ require_once('finebase/IOException.php');
  * @author	Amaury Bouchard <amaury.bouchard@finemedia.fr>
  * @copyright	© 2007, FineMedia
  * @package	FineBase
- * @version	$Id: FineRegistry.php 631 2012-06-26 13:58:52Z jhamrouni $
+ * @version	$Id: FineRegistry.php 641 2013-02-11 12:57:59Z abouchard $
  */
 class FineRegistry {
 	/** Hash ou objet contenant les données stockées par l'objet. */
@@ -126,12 +126,12 @@ class FineRegistry {
 	 * @param	string	$key	(optionnel) Nom sous lequel le contenu du fichier XML sera disponible.
 	 *				Si cette clé n'est pas fournie, l'ensemble des données du
 	 *				fichier XML remplacera les données actuellement stockées.
-	 * @throws	IOException
+	 * @throws	FineIOException
 	 */
 	public function readXml($path, $key=null) {
 		FineLog::log("finebase", FineLog::DEBUG, "Reading XML file '$path'.");
 		if (($xml = simplexml_load_file($path)) === false)
-			throw new IOException("Impossible de lire le fichier XML '$path'.", IOException::BAD_FORMAT);
+			throw new FineIOException("Impossible de lire le fichier XML '$path'.", FineIOException::BAD_FORMAT);
 		if (is_null($key))
 			$this->_data = $xml;
 		else

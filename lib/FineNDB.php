@@ -38,7 +38,7 @@ require_once('finebase/FineDatasource.php');
  *		print("$key -> $val\n");
  *	 // recherche de plusieurs valeurs
  *	 $result = $ndb->search('ugc:*');
- * } catch (DatabaseException $e) {
+ * } catch (Exception $e) {
  *	 print("Erreur base de données: " . $e->getMessage());
  * }
  * </code>
@@ -64,7 +64,7 @@ class FineNDB extends FineDatasource {
 	 * Crée une instance d'une version concrête de l'objet, en fonction des paramètres fournis.
 	 * @param	string	$dsn	DSN de connexion.
 	 * @return	FineNDB	L'objet FineNDB créé.
-	 * @throws	DatabaseException	Si le DSN est incorrect.
+	 * @throws	Exception	Si le DSN est incorrect.
 	 */
 	static public function factory($dsn) {
 		FineLog::log('finebase', FineLog::DEBUG, "FineNDB object creation with DSN: '$dsn'.");
@@ -76,7 +76,7 @@ class FineNDB extends FineDatasource {
 			$base = $matches[4];
 		}
 		if ($type != 'redis')
-			throw new DatabaseException("DSN '$dsn' is invalid.", DatabaseException::FUNDAMENTAL);
+			throw new Exception("DSN '$dsn' is invalid.");
 		$port = isset($port) ? $port : self::DEFAULT_REDIS_PORT;
 		$base = isset($base) ? $base : self::DEFAULT_REDIS_BASE;
 		// création de l'instance
@@ -103,7 +103,7 @@ class FineNDB extends FineDatasource {
 			$this->_ndb->close();
 	}
 
-	/* ***************************** CONNEXION / DECONNEXION **************** */
+	/* ***************************** CONNEXION / DECONNEXION ************************ */
 	/** Ouverture de connexion. */
 	private function _connect() {
 		if ($this->_ndb)
@@ -114,7 +114,7 @@ class FineNDB extends FineDatasource {
 			if ($this->_params['base'] != self::DEFAULT_REDIS_BASE && !$this->_ndb->select($this->_params['base']))
 				throw new Exception("Unable to select dabase '" . $this->_params['base'] . "'.");
 		} catch (Exception $e) {
-			throw new DatabaseException('Redis database connexion error: ' . $e->getMessage(), DatabaseException::FUNDAMENTAL);
+			throw new Exception('Redis database connexion error: ' . $e->getMessage());
 		}
 	}
 	/** Fermeture de connexion. */
@@ -130,13 +130,13 @@ class FineNDB extends FineDatasource {
 	 * @param	string		$value		(optionnel) Valeur associée à la clé.
 	 * @param	bool		$createOnly	(optionnel) Indique s'il faut ajouter la paire que si elle n'existait pas. Faux par défaut.
 	 * @return	FineNDB	L'objet courant.
-	 * @throws      DatabaseException
+	 * @throws      Exception
 	 */
 	public function set($key, $value=null, $createOnly=false) {
 		$this->_connect();
 		if (!is_array($key))
 			$key = array($key => $value);
-		$key = array_map(json_encode, $key);
+		$key = array_map('json_encode', $key);
 		if ($createOnly)
 			$this->_ndb->msetnx($key);
 		else

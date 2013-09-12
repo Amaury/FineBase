@@ -1,6 +1,6 @@
 <?php
 
-if (!class_exists("IOException")) {
+if (!class_exists('FineIOException')) {
 
 /**
  * Objet de gestion des exceptions IO.
@@ -9,9 +9,9 @@ if (!class_exists("IOException")) {
  * @copyright	© 2007-2009, FineMedia
  * @package	FineBase
  * @subpackage	Exception
- * @version	$Id: IOException.php 569 2011-04-15 17:06:33Z abouchard $
+ * @version	$Id: FineIOException.php 641 2013-02-11 12:57:59Z abouchard $
  */
-class IOException extends Exception {
+class FineIOException extends Exception {
 	/** Constante d'erreur fondamentale. */
 	const FUNDAMENTAL = 0;
 	/** Constante d'erreur de fichier introuvable. */

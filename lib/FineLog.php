@@ -2,8 +2,8 @@
 
 if (!class_exists('\FineLog')) {
 
-require_once('finebase/IOException.php');
-require_once('finebase/ApplicationException.php');
+require_once('finebase/FineIOException.php');
+require_once('finebase/FineApplicationException.php');
 
 /**
  * Objet de gestion des messages de log.
@@ -72,7 +72,7 @@ require_once('finebase/ApplicationException.php');
  * @author	Amaury Bouchard <amaury.bouchard@finemedia.fr>
  * @copyright	© 2007-2012, FineMedia
  * @package	FineBase
- * @version	$Id: FineLog.php 628 2012-06-26 11:08:36Z abouchard $
+ * @version	$Id: FineLog.php 641 2013-02-11 12:57:59Z abouchard $
  */
 class FineLog {
 	/** Constante - message de débuggage (priorité la plus faible). */
@@ -245,25 +245,25 @@ class FineLog {
 	/* ********************** METHODES PRIVEES *************** */
 	/**
 	 * Ecrit un message dans le fichier de log si sa priorité atteint le seuil défini.
-	 * @param	string	$class		Classe de log du message.
-	 * @param	int	$priority	Niveau de priorité du message.
-	 * @param	string	$message	Message de log à écrire.
-	 * @throws	ApplicationException	Aucun fichier de log n'est défini.
-	 * @throws	IOException		Problème d'écriture.
+	 * @param	string	$class			Classe de log du message.
+	 * @param	int	$priority		Niveau de priorité du message.
+	 * @param	string	$message		Message de log à écrire.
+	 * @throws	FineApplicationException	Aucun fichier de log n'est défini.
+	 * @throws	FineIOException			Problème d'écriture.
 	 */
 	static private function _writeLog($class, $priority, $message) {
 		// ouvre le fichier si nécessaire
 		if (isset(self::$_logPath) && !empty(self::$_logPath))
 			$path = self::$_logPath;
 		else if (empty(self::$_logCallbacks))
-			throw new ApplicationException('No log file set.', ApplicationException::API);
+			throw new FineApplicationException('No log file set.', FineApplicationException::API);
 		$text = date('c') . ' ' . (isset(self::$_labels[$priority]) ? (self::$_labels[$priority] . ' ') : '');
 		if (!empty($class) && $class != self::DEFAULT_CLASS)
 			$text .= "-$class- ";
 		$text .= $message . "\n";
 		if (isset($path))
 			if (file_put_contents($path, $text, (substr($path, 0, 6) != 'php://' ? FILE_APPEND : null)) === false)
-				throw new IOException("Unable to write on log file '$path'.", IOException::UNWRITABLE);
+				throw new FineIOException("Unable to write on log file '$path'.", FineIOException::UNWRITABLE);
 		foreach (self::$_logCallbacks as $callback)
 			$callback($message, self::$_labels[$priority], $class);
 	}

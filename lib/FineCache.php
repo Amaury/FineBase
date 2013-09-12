@@ -52,11 +52,11 @@ class FineCache extends FineDatasource {
 	/**
 	 * Constructeur. Effectue une connexion au serveur memcache.
 	 * @param	string	$dsn	Chaîne de connexion aux serveurs de cache.
-	 * @throws	DatabaseException	Si le DSN fourni est incorrect.
+	 * @throws	Exception	Si le DSN fourni est incorrect.
 	 */
 	private function __construct($dsn) {
 		if (substr($dsn, 0, 11) !== 'memcache://')
-			throw new DatabaseException("Invalid cache DSN '$dsn'.", DatabaseException::FUNDAMENTAL);
+			throw new Exception("Invalid cache DSN '$dsn'.");
 		$dsn = substr($dsn, 11);
 		if (extension_loaded('memcached') && !empty($dsn)) {
 			$memcache = new MemCached();
@@ -158,9 +158,13 @@ class FineCache extends FineDatasource {
 	 * @param	Closure		$callback	(optionnel) Fonction appelée si la donnée n'a pas été trouvée en cache.
 	 *						Les données retournées par cette fonction seront ajoutées en cache, et retournées
 	 *						par la méthode.
-	 * @return	mixed	La donnée, ou NULL si la donnée n'était pas présente dans le cache.
+	 * @param	int		$expire		(optionnel) Durée d'expiration de la donnée, en secondes. S'il n'est pas présent ou égale à zéro, la durée
+	 *						d'expiration vaudra la valeur par défaut (24 heures). S'il vaut -1 ou une valeur supérieure à 2592000 secondes,
+	 *						la durée d'expiration sera de 30 jours. Cette variable n'est utilisée seulement si la variable $callback est
+	 * 						renseignée.
+	 * @return	mixed	La donnée, le retour de la callback, ou NULL si la donnée n'était pas présente dans le cache.
 	 */
-	public function get($key, Closure $callback=null) {
+	public function get($key, Closure $callback=null, $expire=0) {
 		$key = $this->_getSaltedPrefix() . $key;
 		$data = null;
 		if ($this->_enabled && $this->_memcache) {
@@ -170,7 +174,7 @@ class FineCache extends FineDatasource {
 		}
 		if (is_null($data) && isset($callback)) {
 			$data = $callback();
-			$this->set($key, $data);
+			$this->set($key, $data, $expire);
 		}
 		return ($data);
 	}

@@ -1,6 +1,6 @@
 <?php
 
-require_once("finebase/ApplicationException.php");
+require_once("finebase/FineApplicationException.php");
 
 /**
  * Objet de chronométrage.
@@ -8,7 +8,7 @@ require_once("finebase/ApplicationException.php");
  * @author	Amaury Bouchard <amaury.bouchard@finemedia.fr>
  * @copyright	© 2007, FineMedia
  * @package	FineBase
- * @version	$Id: FineTimer.php 596 2012-01-05 15:59:49Z abouchard $
+ * @version	$Id: FineTimer.php 641 2013-02-11 12:57:59Z abouchard $
  */
 class FineTimer {
 	/** Date de début de chronométrage. */
@@ -32,11 +32,11 @@ class FineTimer {
 	/**
 	 * Retourne le temps écoulé pendant le chronométrage.
 	 * @return	int	Le temps écoulé en microsecondes.
-	 * @throws	ApplicationException
+	 * @throws	FineApplicationException
 	 */
 	public function getTime() {
 		if (is_null($this->_begin))
-			throw new ApplicationException("Le chronomètre n'a pas été lancé correctement.", ApplicationException::API);
+			throw new FineApplicationException("Le chronomètre n'a pas été lancé correctement.", FineApplicationException::API);
 		list($uSecondeA, $secondeA) = explode(" ", $this->_begin);
 		$end = is_null($this->_end) ? microtime() : $this->_end;
 		list($uSecondeB, $secondeB) = explode(" ", $end);

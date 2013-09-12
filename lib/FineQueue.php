@@ -1,7 +1,7 @@
 <?php
 
 require_once('finebase/FineDatabase.php');
-require_once('finebase/ApplicationException.php');
+require_once('finebase/FineApplicationException.php');
 
 /**
  * Objet de gestion d'une file de messages.
@@ -48,12 +48,12 @@ class FineQueue {
 	}
 	/**
 	 * Définition du nom de la file de messages courante.
-	 * @param	string	$queueName	Nom de la file de messages.
-	 * @throws	ApplicationException	Si le nom est invalide.
+	 * @param	string	$queueName		Nom de la file de messages.
+	 * @throws	FineApplicationException	Si le nom est invalide.
 	 */
 	public function setQueueName($queueName) {
 		if (empty($queueName) || mb_strlen($queueName) > 25)
-			throw new ApplicationException("Bad queue name.", ApplicationException::API);
+			throw new FineApplicationException("Bad queue name.", FineApplicationException::API);
 		// création de la file de messages
 		$sql = "INSERT INTO queue.tQueue
 			SET que_s_name = '" . $this->_db->quote($queueName) . "'
@@ -72,14 +72,14 @@ class FineQueue {
 	 * Crée un message dans la file courante.
 	 * @param	mixed	$content	Contenu du message, qui sera sérialisé en JSON.
 	 * @return	int	Identifiant unique du message.
-	 * @throws	ApplicationException	Si la file courante n'a pas été définie ou si le message est trop gros.
+	 * @throws	FineApplicationException	Si la file courante n'a pas été définie ou si le message est trop gros.
 	 */
 	public function sendMessage($content) {
 		if (!$this->_queueId)
-			throw new ApplicationException("Current message queue not set.", ApplicationException::API);
+			throw new FineApplicationException("Current message queue not set.", FineApplicationException::API);
 		$content = json_encode($content);
 		if (mb_strlen($content, 'ASCII') > 65535)
-			throw new ApplicationException("Content size exceed the limit.", ApplicationException::API);
+			throw new FineApplicationException("Content size exceed the limit.", FineApplicationException::API);
 		$sql = "INSERT INTO queue.tMessage
 			SET mes_d_creation = NOW(),
 			    mes_e_status = 'pending',
