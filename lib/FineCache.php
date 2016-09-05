@@ -127,6 +127,16 @@ class FineCache extends FineDatasource {
 		return ($this);
 	}
 	/**
+	 * Retourne le préfixe courant
+	 * @return	string	Nom du préfixe courant;
+	 */
+	public function getPrefix() {
+		if (empty($this->_prefix))
+			return ('');
+		$res = trim($this->_prefix, "|");
+		return ($res);
+	}
+	/**
 	 * Ajoute une donnée dans le cache.
 	 * @param	string	$key	Clé d'indexation de la donnée.
 	 * @param	mixed	$data	(optionnel) Valeur de la donnée. La donnée est effacée si cette valeur vaut null ou si elle n'est pas fournie.
@@ -165,6 +175,8 @@ class FineCache extends FineDatasource {
 	 * @return	mixed	La donnée, le retour de la callback, ou NULL si la donnée n'était pas présente dans le cache.
 	 */
 	public function get($key, Closure $callback=null, $expire=0) {
+		$origPrefix = $this->_prefix;
+		$origKey = $key;
 		$key = $this->_getSaltedPrefix() . $key;
 		$data = null;
 		if ($this->_enabled && $this->_memcache) {
@@ -174,7 +186,8 @@ class FineCache extends FineDatasource {
 		}
 		if (is_null($data) && isset($callback)) {
 			$data = $callback();
-			$this->set($key, $data, $expire);
+			$this->_prefix = $origPrefix;
+			$this->set($origKey, $data, $expire);
 		}
 		return ($data);
 	}
@@ -187,7 +200,7 @@ class FineCache extends FineDatasource {
 		if (empty($prefix))
 			return;
 		$saltKey = self::PREFIX_SALT_PREFIX . "|$prefix|";
-		$salt = substr(hash('md5', time() . mt_rand()), 0, mt_rand(4, 8));
+		$salt = substr(hash('md5', time() . mt_rand()), 0, 8);
 		if ($this->_enabled && $this->_memcache)
 			$this->_memcache->set($saltKey, $salt, 0);
 		return ($this);
@@ -208,7 +221,7 @@ class FineCache extends FineDatasource {
 			$salt = $this->_memcache->get($saltKey);
 		// génération du sel si besoin
 		if (!isset($salt) || !is_string($salt)) {
-			$salt = substr(hash('md5', time() . mt_rand()), 0, mt_rand(4, 8));
+			$salt = substr(hash('md5', time() . mt_rand()), 0, 8);
 			if ($this->_enabled && $this->_memcache)
 				$this->_memcache->set($saltKey, $salt, 0);
 		}
