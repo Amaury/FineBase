@@ -58,23 +58,30 @@ class FineCache extends FineDatasource {
 		if (substr($dsn, 0, 11) !== 'memcache://')
 			throw new Exception("Invalid cache DSN '$dsn'.");
 		$dsn = substr($dsn, 11);
-		if (extension_loaded('memcached') && !empty($dsn)) {
-			$memcache = new MemCached();
-			$memcache->setOption(Memcached::OPT_COMPRESSION, true);
-			$servers = explode(';', $dsn);
-			foreach ($servers as &$server) {
-				if (empty($server))
-					continue;
-				if (strpos($server, ':') === false)
-					$server = array($server, self::DEFAULT_MEMCACHE_PORT);
-				else {
-					list($host, $port) = explode(':', $server);
-					$server = array(
-						$host,
-						($port ? $port : self::DEFAULT_MEMCACHE_PORT)
-					);
-				}
+		if (!extension_loaded('memcached') || empty($dsn))
+			return;
+		$memcache = new MemCached();
+		$memcache->setOption(Memcached::OPT_COMPRESSION, true);
+		$servers = explode(';', $dsn);
+		foreach ($servers as &$server) {
+			if (empty($server))
+				continue;
+			if (strpos($server, ':') === false)
+				$server = array($server, self::DEFAULT_MEMCACHE_PORT);
+			else {
+				list($host, $port) = explode(':', $server);
+				$server = array(
+					$host,
+					($port ? $port : self::DEFAULT_MEMCACHE_PORT)
+				);
 			}
+		}
+		if (count($servers) == 1) {
+			if ($memcache->addServer($servers[0][0], $servers[0][1])) {
+				$this->_memcache = $memcache;
+				$this->_enabled = true;
+			}
+		} else if (count($servers) > 1) {
 			if ($memcache->addServers($servers)) {
 				$this->_memcache = $memcache;
 				$this->_enabled = true;
