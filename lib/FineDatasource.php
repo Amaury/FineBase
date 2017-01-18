@@ -40,6 +40,13 @@ abstract class FineDatasource {
 		} else
 			throw new Exception("No valid DSN provided '$dsn'.");
 	}
+	/**
+	 * Indique si le cache est actif ou non.
+	 * @return	bool	True si le cache est actif.
+	 */
+	public function isEnabled() {
+		return (true);
+	}
 }
 
 ?>
