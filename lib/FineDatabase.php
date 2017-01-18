@@ -118,6 +118,7 @@ class FineDatabase extends FineDatasource {
 		if ($this->_db)
 			return;
 		$this->_db = new mysqli($this->_params['host'], $this->_params['login'], $this->_params['password'], $this->_params['base'], (int)$this->_params['port']);
+		$this->charset();
 		if (mysqli_connect_errno())
 			throw new Exception("MySQLi database connexion error: " . mysqli_connect_error());
 	}
