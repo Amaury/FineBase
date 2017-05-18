@@ -62,6 +62,10 @@ class FineDatabase extends FineDatasource {
 	private $_db = null;
 	/** Paramètres de connexion à la base de données. */
 	private $_params = null;
+	/** Indique qu'une requête synchrone a été exécutée. */
+	private $_sync = false;
+	/** Liste des requêtes asynchrones en attente. */
+	private $_asyncRequests = null;
 
 	/* ************************ CONSTRUCTION ********************** */
 	/**
@@ -197,10 +201,14 @@ class FineDatabase extends FineDatasource {
 	/**
 	 * Exécute une requête SQL sans récupération des données.
 	 * @param       string  $sql    La requête à exécuter.
+	 * @param	bool	$async	(optionnel) Indique que la requête peut être mise en attente
+	 *				jusqu'à ce qu'une requête synchrone soit exécutée. Les requêtes
+	 *				asynchrones sont alors exécutées en premier, dans l'ordre de leurs
+	 *				appels. False par défaut.
 	 * @throws      Exception
 	 */
-	public function exec($sql) {
-		$this->_query($sql);
+	public function exec($sql, $async=false) {
+		$this->_query($sql, $async);
 	}
 	/**
 	 * Exécute une requête SQL avec récupération d'une seule ligne de données.
@@ -242,12 +250,27 @@ class FineDatabase extends FineDatasource {
 	/**
 	 * Exécute une requête et retourne son résultat.
 	 * @param	string	$sql	La requête à exécuter.
+	 * @param	bool	$async	(optionnel) Indique si la requête peut être asynchrone. False par défaut.
 	 * @return	mixed	La ressource du résultat.
 	 * @throws	Exception
 	 */
-	private function _query($sql) {
+	private function _query($sql, $async=false) {
 		FineLog::log('finebase', FineLog::DEBUG, "SQL query: $sql");
+		if ($async && !$this->_sync) {
+			if (is_null($this->_asyncRequests))
+				$this->_asyncRequests = array();
+			$this->_asyncRequests[] = $sql;
+			return;
+		}
 		$this->_connect();
+		$this->_sync = true;
+		if (!empty($this->_asyncRequests)) {
+			foreach ($this->_asyncRequests as $request) {
+				if ($this->_db->query($request) === false)
+					throw new Exception("Async request failed: " . $this->_db->error);
+			}
+			$this->_asyncRequests = null;
+		}
 		if (($result = $this->_db->query($sql)) === false)
 			throw new Exception("Request failed: " . $this->_db->error);
 		return ($result);

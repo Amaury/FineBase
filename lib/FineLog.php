@@ -89,6 +89,8 @@ class FineLog {
 	const CRIT = 'CRIT';
 	/** Nom de la classe de log par défaut. */
 	const DEFAULT_CLASS = 'default';
+	/** Identifiant de requête. */
+	static private $_requestId = null;
 	/** Chemin vers le fichier dans lequel écrire les messages de log. */
 	static private $_logPath = null;
 	/** Tableau de fonctions à exécuter pour écrire les messages de log de manière personnalisée. */
@@ -158,6 +160,9 @@ class FineLog {
 	 * @param	string	$message				(optionnel) Message de log à écrire.
 	 */
 	static public function log($classOrMessageOrPriority, $messageOrPriority=null, $message=null) {
+		if (is_null(self::$_requestId)) {
+			self::$_requestId = substr(base_convert(hash('md5', mt_rand()), 16, 36), 0, 4);
+		}
 		// traitement des paramètres
 		if (!is_null($message) && !is_null($messageOrPriority)) {
 			$class = $classOrMessageOrPriority;
@@ -257,7 +262,7 @@ class FineLog {
 			$path = self::$_logPath;
 		else if (empty(self::$_logCallbacks))
 			throw new FineApplicationException('No log file set.', FineApplicationException::API);
-		$text = date('c') . ' ' . (isset(self::$_labels[$priority]) ? (self::$_labels[$priority] . ' ') : '');
+		$text = date('c') . ' [' . self::$_requestId . '] ' . (isset(self::$_labels[$priority]) ? (self::$_labels[$priority] . ' ') : '');
 		if (!empty($class) && $class != self::DEFAULT_CLASS)
 			$text .= "-$class- ";
 		$text .= $message . "\n";
