@@ -1,28 +1,26 @@
 <?php
 
-/**
- * Objet de génération de fichier JSON lisible par un être humain.
- *
- * @author	Amaury Bouchard <amaury@amaury.net>
- */
+/** Object for human-readable JSON generation. */
 class JsonExport {
 	/**
-	 * Écrit les données au format JSON, lisible par un être humain.
-	 * @param	mixed	$data	Les données à écrire.
-	 * @param	int	$indent	(optionnel) Le nombre d'indentations.
+	 * Generate a human-readable stream.
+	 * @param	mixed	$data	.
+	 * @param	int	$indent	(optionnel) Indentation level.
+	 * @return	string	The generated JSON.
 	 */
-	static public function writeData($data, $indent=0) {
+	static public function generate($data, $indent=0) {
 		$indent++;
 		if (is_null($data)) {
-			print('null');
+			return ('null');
 		} else if (is_bool($data)) {
-			print($data ? 'true' : 'false');
+			return ($data ? 'true' : 'false');
 		} else if (is_int($data) || is_float($data)) {
-			print($data);
+			return ($data);
 		} else if (is_string($data)) {
-			print('"' . addcslashes($data, '"/') . '"');
+			return ('"' . addcslashes($data, '"/') . '"');
 		} else if (is_array($data)) {
-			// vérification des clés
+			$result = '';
+			// key type checking
 			$numericKeys = true;
 			$i = 0;
 			foreach ($data as $key => $subdata) {
@@ -32,33 +30,35 @@ class JsonExport {
 				}
 				$i++;
 			}
-			// écriture
-			print(($numericKeys ? '[' : '{') . "\n");
+			// writing
+			$result .= ($numericKeys ? '[' : '{') . "\n";
 			$loopNbr = 1;
 			foreach ($data as $key => $subdata) {
-				self::_indent($indent);
+				$result .= self::_indent($indent);
 				if (!$numericKeys)
-					print('"' . addcslashes($key, "\"'") . '": ');
-				self::writeData($subdata, $indent);
+					$result .= '"' . addcslashes($key, "\"'") . '": ';
+				$result .= self::generate($subdata, $indent);
 				if ($loopNbr < count($data))
-					print(',');
-				print("\n");
+					$result .= ',';
+				$result .= "\n";
 				$loopNbr++;
 			}
-			self::_indent($indent - 1);
-			print($numericKeys ? ']' : '}');
+			$result .= self::_indent($indent - 1);
+			$result .= $numericKeys ? ']' : '}';
+			return ($result);
 		} else
 			throw new Exception("Non-scalar data\n" . print_r($data, true));
 		$indent--;
 	}
 	/**
-	 * Indente le texte du nombre de tabulations demandé.
-	 * @param	int	$nbr	Nombre de tabulations.
+	 * Add indentation.
+	 * @param	int	$nbr	Number of tabs.
+	 * @return	string	The generated text.
 	 */
 	static private function _indent($nbr) {
+		$result = '';
 		for ($i = 0; $i < $nbr; $i++)
-			print("\t");
+			$result .= "\t";
+		return ($result);
 	}
 }
-
-?>
