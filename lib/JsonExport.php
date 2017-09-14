@@ -17,7 +17,7 @@ class JsonExport {
 		} else if (is_int($data) || is_float($data)) {
 			return ($data);
 		} else if (is_string($data)) {
-			return ('"' . addcslashes($data, '"/') . '"');
+			return ('"' . addcslashes($data, '\"/') . '"');
 		} else if (is_array($data)) {
 			$result = '';
 			// key type checking
