@@ -212,6 +212,21 @@ class FineCache extends FineDatasource {
 			$this->_memcache->set($saltKey, $salt, 0);
 		return ($this);
 	}
+	/**
+	 * Vérifie si une variable est définie en cache.
+	 * @param	string	$key	Clé d'indexation de la donnée.
+	 * @return	bool	True si la donnée existe, false sinon.
+	 */
+	public function isSet($key) {
+		if (empty($key) || !$this->_enabled || !$this->_memcache)
+			return (false);
+		$origPrefix = $this->_prefix;
+		$origKey = $key;
+		$key = $this->_getSaltedPrevix() . $key;
+		if ($this->_memcache->get($key) === false && $this->_memcache->getResultCode() == Memcached::RES_NOTFOUND)
+			return (false);
+		return (true);
+	}
 
 	/* ************************** METHODES PRIVEES ******************** */
 	/**
