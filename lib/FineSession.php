@@ -194,6 +194,42 @@ class FineSession {
 		$this->_cache->set('sess:' . $this->_sessionId, $cacheData, $this->_duration);
 	}
 	/**
+	 * Enregistre une donnée de tableau associatif en session.
+	 * Le tableau est créé s'il n'existe pas.
+	 * @param	string	$key		Nom de la variable de session.
+	 * @param	string	$arrayKey	Nom de la clé du tableau associatif.
+	 * @param	mixed	$value		(optionnel) Valeur de la donnée. La donnée est effacée si cette valeur vaut null ou si elle n'est pas fournie.
+	 */
+	public function setArray($key, $arrayKey, $value=null) {
+		FineLog::log('finebase', FineLog::DEBUG, "Setting value for array '$key\[$arrayKey\]'.");
+		if (!isset($this->_cache)) {
+			if (is_null($value)) {
+				if (isset($_SESSION[$key][$arrayKey]))
+					unset($_SESSION[$key][$arrayKey]);
+			} else {
+				if (!isset($_SESSION[$key]) || !is_array($_SESSION[$key]))
+					$_SESSION[$key] = [];
+				$_SESSION[$key][$arrayKey] = $value;
+			}
+			return;
+		}
+		// mise-à-jour du tableau interne
+		if (is_null($value)) {
+			if (isset($this->_data[$key][$arrayKey]))
+				unset($this->_data[$key][$arrayKey]);
+		} else {
+			if (!isset($this->_data[$key]) || !is_array($this->_data[$key]))
+				$this->_data[$key] = [];
+			$this->_data[$key][$arrayKey] = $value;
+		}
+		// synchronisation des données
+		$cacheData = array(
+			'_magic'	=> 'Ax',
+			'data'		=> $this->_data
+		);
+		$this->_cache->set('sess:' . $this->_sessionId, $cacheData, $this->_duration);
+	}
+	/**
 	 * Récupère une donnée de session.
 	 * La donnée est désérialisée grâce à la fonction unserialize() de PHP.
 	 * @param	string	$key		Nom de la donnée.
