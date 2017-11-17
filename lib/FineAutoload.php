@@ -25,8 +25,9 @@ class FineAutoload {
 			// désactivation des logs de warning, pour gérer les objets introuvables
 			$errorReporting = error_reporting();
 			error_reporting($errorReporting & ~E_WARNING);
-			if (!include("$name.php"))
-				\FineLog::log('finebase', \FineLog::DEBUG, "Unable to load object '$name'.");
+			$included = include("$name.php");
+			if ($included === false)
+				\FineLog::log('finebase', \FineLog::DEBUG, "Unable to load file '$name.php'.");
 			// remise en place de l'ancien niveau de rapport d'erreurs
 			error_reporting($errorReporting);
 		}, true, true);
@@ -36,7 +37,7 @@ class FineAutoload {
 	 * @param	string|array	$path	Chemin ou liste de chemins à ajouter.
 	 */
 	static public function addIncludePath($path) {
-		FineLog::log('finebase', FineLog::DEBUG, "Add include path : " . print_r($path, true));
+		FineLog::log('finebase', FineLog::DEBUG, "Add include path: " . print_r($path, true));
 		$path = is_array($path) ? $path : array($path);
 		$libPath = implode(PATH_SEPARATOR, $path);
 		if (!empty($libPath))
