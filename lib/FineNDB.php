@@ -129,18 +129,27 @@ class FineNDB extends FineDatasource {
 	 * @param	string|array	$key		Clé, ou tableau associatif de paires clé/valeur.
 	 * @param	string		$value		(optionnel) Valeur associée à la clé.
 	 * @param	bool		$createOnly	(optionnel) Indique s'il faut ajouter la paire que si elle n'existait pas. Faux par défaut.
+	 * @param	int		$timeout	(optionnel) Indique le nombre de secondes avant l'expiration de la clé. 0 par défaut, pour ne pas avoir d'expiration.
 	 * @return	FineNDB	L'objet courant.
 	 * @throws      Exception
 	 */
-	public function set($key, $value=null, $createOnly=false) {
+	public function set($key, $value=null, $createOnly=false, $timeout=0) {
 		$this->_connect();
-		if (!is_array($key))
-			$key = array($key => $value);
-		$key = array_map('json_encode', $key);
-		if ($createOnly)
-			$this->_ndb->msetnx($key);
-		else
-			$this->_ndb->mset($key);
+		if (!is_array($key)) {
+			$value = json_encode($value);
+			if ($createOnly)
+				$this->_ndb->setnx($key, $value);
+			else if (isset($timeout) && is_numeric($timeout) && $timeout > 0)
+				$this->_ndb->setex($key, $timeout, $value);
+			else
+				$this->_ndb->set($key, $value);
+		} else {
+			$key = array_map('json_encode', $key);
+			if ($createOnly)
+				$this->_ndb->msetnx($key);
+			else
+				$this->_ndb->mset($key);
+		}
 		return ($this);
 	}
 	/**

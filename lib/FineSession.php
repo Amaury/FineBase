@@ -191,7 +191,10 @@ class FineSession {
 			'_magic'	=> 'Ax',
 			'data'		=> $this->_data
 		);
-		$this->_cache->set('sess:' . $this->_sessionId, $cacheData, $this->_duration);
+		if (is_a($this->_cache, '\FineCache'))
+			$this->_cache->set('sess:' . $this->_sessionId, $cacheData, $this->_duration);
+		else if (is_a($this->_cache, '\FineNDB'))
+			$this->_cache->set('sess:' . $this->_sessionId, $cacheData, false, $this->_duration);
 	}
 	/**
 	 * Enregistre une donnée de tableau associatif en session.
