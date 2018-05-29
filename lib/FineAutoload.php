@@ -12,8 +12,11 @@ require_once('finebase/FineLog.php');
  * @version	$Id$
  */
 class FineAutoload {
-	/** Lancement de l'autoloader. */
-	static public function autoload() {
+	/**
+	 * Lancement de l'autoloader.
+	 * @param	string|array	$path	(optionnel) Chemin ou liste de chemins d'inclusion.
+	 */
+	static public function autoload($path=null) {
 		FineLog::log('finebase', FineLog::DEBUG, "FineAutoload started.");
 		// configuration de l'autoloader
 		spl_autoload_register(function($name) {
@@ -31,6 +34,8 @@ class FineAutoload {
 			// remise en place de l'ancien niveau de rapport d'erreurs
 			error_reporting($errorReporting);
 		}, true, true);
+		if ($path)
+			self::addIncludePath($path);
 	}
 	/**
 	 * Ajout d'un ou plusieurs chemins d'inclusion.
