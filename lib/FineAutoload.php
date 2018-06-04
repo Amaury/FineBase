@@ -42,7 +42,6 @@ class FineAutoload {
 	 * @param	string|array	$path	Chemin ou liste de chemins à ajouter.
 	 */
 	static public function addIncludePath($path) {
-		FineLog::log('finebase', FineLog::DEBUG, "Add include path: " . print_r($path, true));
 		$path = is_array($path) ? $path : array($path);
 		$libPath = implode(PATH_SEPARATOR, $path);
 		if (!empty($libPath))
