@@ -99,6 +99,8 @@ class FineLog {
 	static private $_logToStdOut = false;
 	/** Indicateur d'écriture sur STDERR. */
 	static private $_logToStdErr = false;
+	/** Indicateur d'écriture des logs. */
+	static private $_enable = true;
 	/** Seuil actuel de criticité des messages affichés. */
 	static private $_threshold = array();
 	/** Seuil par défaut pour les messages de log dont la classe n'est pas connue. */
@@ -128,6 +130,7 @@ class FineLog {
 	 * @param	string	path	Chemin vers le fichier de log.
 	 */
 	static public function setLogFile($path) {
+		self::$_enable = true;
 		self::$_logPath = $path;
 	}
 	/**
@@ -135,6 +138,7 @@ class FineLog {
 	 * @param	Closure	$func	La fonction à exécuter.
 	 */
 	static public function addCallback(Closure $func) {
+		self::$_enable = true;
 		self::$_logCallbacks[] = $func;
 	}
 	/**
@@ -142,6 +146,7 @@ class FineLog {
 	 * @param	bool	$activate	(optionnel) Mettre à false pour désactiver l'écriture sur STDOUT.
 	 */
 	static public function logToStdOut($activate=true) {
+		self::$_enable = true;
 		self::$_logToStdOut = ($activate === false) ? false : true;
 	}
 	/**
@@ -149,7 +154,16 @@ class FineLog {
 	 * @param	bool	$activate	(optionnel) Mettre à false pour désactiver l'écriture sur STDERR.
 	 */
 	static public function logToStdErr($activate=true) {
+		self::$_enable = true;
 		self::$_logToStdErr = ($activate === false) ? false : true;
+	}
+	/** Désactive l'écriture des logs. */
+	static public function disable() {
+		self::$_enable = false;
+	}
+	/** Active l'écriture des logs. */
+	static public function enable() {
+		self::$_enable = true;
 	}
 	/**
 	 * Définit le seuil de criticité minimum en-dessous duquel les messages ne sont pas écrits.
@@ -282,6 +296,8 @@ class FineLog {
 	 * @throws	FineIOException			Problème d'écriture.
 	 */
 	static private function _writeLog($class, $priority, $message) {
+		if (!self::$_enable)
+			return;
 		// ouvre le fichier si nécessaire
 		if (isset(self::$_logPath) && !empty(self::$_logPath))
 			$path = self::$_logPath;
