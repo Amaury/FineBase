@@ -205,10 +205,12 @@ class FineDatabase extends FineDatasource {
 	 *				jusqu'à ce qu'une requête synchrone soit exécutée. Les requêtes
 	 *				asynchrones sont alors exécutées en premier, dans l'ordre de leurs
 	 *				appels. False par défaut.
+	 * @return	int	Le nombre de lignes modifiées.
 	 * @throws      Exception
 	 */
 	public function exec($sql, $async=false) {
 		$this->_query($sql, $async);
+		return ($this->_db->affected_rows);
 	}
 	/**
 	 * Exécute une requête SQL avec récupération d'une seule ligne de données.
