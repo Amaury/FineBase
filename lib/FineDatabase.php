@@ -11,6 +11,10 @@ require_once('finebase/FineDatasource.php');
  * <pre>type://login:password@host/base</pre>
  * exemple : <tt>mysqli://user:pwd@localhost/database</tt>
  *
+ * Pour une connexion MySQL via socket Unix :
+ * <pre>mysqli://login:password@localhost/database#chemin.sock</pre>
+ * exemple : <tt>mysqli://user:pwd@localhost/database#/var/run/mysqld/mysqld.sock</tt>
+ *
  * Exemple simple d'utilisation :
  * <code>
  * try {
@@ -78,18 +82,19 @@ class FineDatabase extends FineDatasource {
 	static public function factory($dsn) {
 		FineLog::log('finebase', FineLog::DEBUG, "Database object creation with DSN: '$dsn'.");
 		// extraction des paramètres de connexion
-		if (preg_match("/^([^:]+):\/\/([^:@]+):?([^@]+)?@([^\/:]+):?(\d+)?\/(.*)$/", $dsn, $matches)) {
+		if (preg_match("/^([^:]+):\/\/([^:@]+):?([^@]+)?@([^\/:]+):?(\d+)?\/([^#]*)#?(.*)$/", $dsn, $matches)) {
 			$type = $matches[1];
 			$login = $matches[2];
 			$password = $matches[3];
 			$host = $matches[4];
 			$port = $matches[5];
 			$base = $matches[6];
+			$sock = $matches[7];
 		}
 		if ($type != 'mysqli')
 			throw new Exception("No DSN provided.");
 		// création de l'instance
-		$instance = new FineDatabase($host, $login, $password, $base, (int)$port);
+		$instance = new FineDatabase($host, $login, $password, $base, (int)$port, $sock);
 		return ($instance);
 	}
 	/**
@@ -99,15 +104,17 @@ class FineDatabase extends FineDatasource {
 	 * @param	string	$password	Mot de passe de l'utilisateur.
 	 * @param	string	$base		Nom de la base sur laquelle se connecter.
 	 * @param	int	$port		Numéro de port sur lequel se connecter.
+	 * @param	string	$sock		(optionnel) Chemin vers la socket Unix locale (si le paramètre $host vaut 'localhost').
 	 */
-	private function __construct($host, $login, $password, $base, $port) {
+	private function __construct($host, $login, $password, $base, $port, $sock=null) {
 		FineLog::log('finebase', FineLog::DEBUG, "MySQL object creation. base: '$base'.");
 		$this->_params = array(
 			'host'		=> $host,
 			'login'		=> $login,
 			'password'	=> $password,
 			'base'		=> $base,
-			'port'		=> $port
+			'port'		=> $port,
+			'sock'		=> $sock,
 		);
 	}
 	/** Destructeur. Ferme la connexion. */
@@ -121,7 +128,8 @@ class FineDatabase extends FineDatasource {
 	private function _connect() {
 		if ($this->_db)
 			return;
-		$this->_db = new mysqli($this->_params['host'], $this->_params['login'], $this->_params['password'], $this->_params['base'], (int)$this->_params['port']);
+		$this->_db = new mysqli($this->_params['host'], $this->_params['login'], $this->_params['password'],
+		                        $this->_params['base'], (int)$this->_params['port'], $this->_params['sock']);
 		$this->charset();
 		if (mysqli_connect_errno())
 			throw new Exception("MySQLi database connexion error: " . mysqli_connect_error());
@@ -156,7 +164,7 @@ class FineDatabase extends FineDatasource {
 	 * @throws      Exception
 	 */
 	public function commit() {
-		FineLog::log('finebase', FineLog::DEBUG, "Commiting transaction.");
+		FineLog::log('finebase', FineLog::DEBUG, "Committing transaction.");
 		$this->_connect();
 		if ($this->_db->commit() === false)
 			throw new Exception("Error during transaction commit.");
