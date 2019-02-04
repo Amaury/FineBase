@@ -28,7 +28,7 @@ abstract class FineDatasource {
 		} else if (substr($dsn, 0, 11) === 'memcache://') {
 			require_once('finebase/FineCache.php');
 			return (FineCache::factory($dsn));
-		} else if (substr($dsn, 0, 8) === 'redis://') {
+		} else if (substr($dsn, 0, 8) === 'redis://' || substr($dsn, 0, 13) === 'redis-sock://') {
 			require_once('finebase/FineNDB.php');
 			return (FineNDB::factory($dsn));
 		} else if (substr($dsn, 0, 8) == 'dummy://') {

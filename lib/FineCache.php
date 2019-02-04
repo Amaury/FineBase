@@ -20,6 +20,9 @@ require_once('finebase/FineDatasource.php');
  * $cache->set("nom de la variable", null);
  * </code>
  *
+ * Socket Unix :
+ * <tt>memcache:///var/run/memcached.sock:0
+ *
  * @author	Amaury Bouchard <amaury.bouchard@finemedia.fr>
  * @copyright	© 2009-2012, FineMedia
  * @package	FineBase
