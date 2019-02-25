@@ -24,7 +24,7 @@ class FineAutoload {
 			// transformation du namespace en chemin
 			$name = trim($name, '\\');
 			$name = str_replace('\\', DIRECTORY_SEPARATOR, $name);
-			$name = str_replace('_', DIRECTORY_SEPARATOR, $name);
+			//$name = str_replace('_', DIRECTORY_SEPARATOR, $name);
 			// désactivation des logs de warning, pour gérer les objets introuvables
 			$errorReporting = error_reporting();
 			error_reporting($errorReporting & ~E_WARNING);
