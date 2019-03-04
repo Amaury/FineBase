@@ -79,7 +79,7 @@ class FineNDB extends FineDatasource {
 		} else if (preg_match("/^([^:]+):\/\/([^\/:]+):?(\d+)?\/?(.*)$/", $dsn, $matches)) {
 			$type = $matches[1];
 			$host = $matches[2];
-			$port = isset($matches[3]) ? $matches[3] : self::DEFAULT_REDIS_PORT;
+			$port = (!empty($matches[3]) && ctype_digit($matches[3])) ? $matches[3] : self::DEFAULT_REDIS_PORT;
 			$base = $matches[4];
 		}
 		if ($type != 'redis')
