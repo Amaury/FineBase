@@ -91,7 +91,7 @@ class FineDatabase extends FineDatasource {
 			$base = $matches[6];
 			$sock = $matches[7];
 		}
-		if ($type != 'mysqli')
+		if (!isset($type) || $type != 'mysqli')
 			throw new Exception("No DSN provided.");
 		// création de l'instance
 		$instance = new FineDatabase($host, $login, $password, $base, (int)$port, $sock);
