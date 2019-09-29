@@ -117,7 +117,21 @@ class FineSession {
 			$host = $matches[0];
 		if (!isset($_COOKIE[$cookieName]) || empty($_COOKIE[$cookieName]) || $this->_sessionId != $oldSessionId && !headers_sent()) {
 			FineLog::log('finebase', FineLog::DEBUG, "Send cookie '$cookieName' - '$newSessionId' - '$timestamp' - '.$host'");
-			setcookie($cookieName, $newSessionId, $timestamp, '/', ".$host", false);
+			// envoi du cookie
+			if (PHP_VERSION_ID < 70300) {
+				// PHP < 7.3 : utilisation d'un hack permettant d'envoyer l'attribut 'samesite'
+				setcookie($cookieName, $newSessionId, $timestamp, '/; samesite=Lax', ".$host", false);
+			} else {
+				// PHP >= 7.3 : utilisation d'un tableau associatif
+				setcookie($cookieName, $newSessionId, [
+					'expires'	=> $timestamp,
+					'path'		=> '/',
+					'domain'	=> ".$host",
+					'secure'	=> false,
+					'httponly'	=> false,
+					'samesite'	=> 'Lax'
+				]);
+			}
 		}
 	}
 
